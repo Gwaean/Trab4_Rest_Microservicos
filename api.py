@@ -1,11 +1,14 @@
 from flask import Flask,jsonify
-from flask import Flask, render_template
+from flask import render_template
 from flask import sse
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 import uuid
 import random
 from faker import Faker
+from flask_cors import CORS
+from Cruzeiro_Itinerarios import carregar_itinerarios
+
 fake = Faker()
 
 app = Flask(__name__)
@@ -39,6 +42,16 @@ sched.start()
 def index():
     return jsonify(get_data())
 
+@app.route('/api/destinations')
+def get_destinations():
+    """Return list of unique destinations from itinerarios.csv"""
+    itinerarios = carregar_itinerarios()
+
+    destinos = list(set(item['destino'] for item in itinerarios))
     
+    return jsonify([
+        {"id": idx + 1, "name": destino}
+        for idx, destino in enumerate(destinos)
+    ])
 if __name__ == '__main__':
    app.run(debug=True,host='0.0.0.0',port=5000)

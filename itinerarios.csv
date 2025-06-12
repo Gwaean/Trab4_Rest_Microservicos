@@ -1,0 +1,10 @@
+Destino,Data_Embarque,Porto_Embarque,Nome_Navio,Porto_Desemb,Lugares_Visit,Num_Noites,Valor_Pacote
+Brasil,25/08/2025,Santos,Costa Brasil,Rio de Janeiro,"Ilhabela, Búzios, Angra",7,3500
+BRASIL,25/08/2025,Santos,MSC Cruzeiros,Santa Catarina,"Ilha do Mel, Caiobá, Picarras",6,3700
+MÉXICO,01/09/2025,Cancún,Mayan Queen,Acapulco,"Cozumel, Tulum, Playa del Carmen",8,4100
+CARIBE,10/09/2025,Miami,Ocean Dream,San Juan,"Bahamas, Barbados, Aruba",6,4200
+EUROPA,20/09/2025,Barcelona,Mediterrâneo Azul,Veneza,"Marselha, Roma, Santorini",10,6400
+ÁSIA,15/10/2025,Singapura,Eastern Pearl,Bangkok,"Phuket, Halong Bay, Kuala Lumpur",12,7200
+RUSSIA,05/11/2025,Saint Petersburg,Northern Star,Moscovo,"Helsinque, Tallin, Estocolmo",9,5800
+AUSTRÁLIA,15/11/2025,Sydney,Oceanic Explorer,Melbourne,"Gold Coast, Brisbane, Cairns",10,5000
+EUROPA, 01/12/2025, Roma,Italian Dream,Atenas,"Nápoles, Barcelona, Lisboa",8,6200

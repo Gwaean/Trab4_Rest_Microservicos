@@ -590,6 +590,8 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4 {
         left: 0; } }
     .hero .slides img {
       position: absolute;
+      object-fit: contain;
+      object-position: center;
       border-radius: 200px;
       opacity: 0;
       -webkit-transition: 4s opacity ease;

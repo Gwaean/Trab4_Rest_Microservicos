@@ -1,58 +1,99 @@
-import csv
+
 import json
 import uuid
 from datetime import datetime
 import pika
+import threading
+import requests
+from flask import Flask, jsonify, request, Response
+from flask_cors import CORS
 
+app = Flask(__name__)
+CORS(app)
+reservas = {}
+conexoes_sse = {}
+MS_ITINERARIOS_URL = "http://localhost:5001"
+MS_PAGAMENTO_URL = "http://localhost:5002"
 
-def ler_itinerarios(itinerários_csv):
-    itinerarios = []
-    
-    with open(itinerários_csv, mode='r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)  
-        for row in reader:
-            itinerarios.append({
-                'Destino': row['Destino'],
-                'Data_Embarque': datetime.strptime(row['Data_Embarque'], '%d/%m/%Y').date(),
-                'Porto_Embarque': row['Porto_Embarque'],
-                'Nome_Navio': row['Nome_Navio'],
-                'Porto_Desemb': row['Porto_Desemb'],
-                'Lugares_Visit': row['Lugares_Visit'],
-                'Num_Noites': int(row['Num_Noites']),
-                'Valor_Pacote': float(row['Valor_Pacote'])
+@app.route('/api/reservas', methods=['POST'])
+def criar_reserva():
+    dados = request.json
+    required_fields = ['itinerario_id', 'data_embarque', 'num_passageiros', 'num_cabines']
+    for field in required_fields:
+        if field not in dados:
+            return jsonify({"erro": f"Campo obrigatório: {field}"}), 400
+    reserva_id = str(uuid.uuid4())
+    reserva = {
+            "reserva_id": reserva_id,
+            "itinerario_id": dados['itinerario_id'],
+            "data_embarque": dados['data_embarque'],
+            "num_passageiros": dados['num_passageiros'],
+            "num_cabines": dados['num_cabines'],
+            "valor_total": dados.get('valor_total', 0),
+            "status": "pendente",
+            "data_criacao": datetime.now().isoformat()
+        }
+    reservas[reserva_id] = reserva
+    publicar_reserva("reserva-criada", reserva)
+        
+        # Solicita link de pagamento
+    try:
+            pagamento_response = requests.post(f"{MS_PAGAMENTO_URL}/api/pagamento", json={
+                "reserva_id": reserva_id,
+                "valor": reserva["valor_total"],
+                "moeda": "BRL"
             })
-
             
-    return itinerarios
-
-def consultar_itinerarios(itinerarios, porto_embarque, data_embarque):
-    resultados = []
+            if pagamento_response.status_code == 200:
+                link_pagamento = pagamento_response.json().get("link_pagamento")
+                reserva["link_pagamento"] = link_pagamento
+    except Exception as e:
+            print(f"Erro ao solicitar link de pagamento: {e}")
+        
+    return jsonify({
+            "reserva_id": reserva_id,
+            "status": "criada",
+            "link_pagamento": reserva.get("link_pagamento", "")
+        })
+@app.route('/api/reservas/<reserva_id>', methods=['DELETE'])
+def cancelar_reserva(reserva_id):
+    try:
+        if reserva_id not in reservas:
+            return jsonify({"erro": "Reserva não encontrada"}), 404
+        
+        reserva = reservas[reserva_id]
+        reserva["status"] = "cancelada"
+        # Publica evento de cancelamento
+        publicar_reserva("reserva-cancelada", reserva)
+        enviar_notificacao_sse(reserva_id, {
+            "tipo": "reserva_cancelada",
+            "reserva_id": reserva_id,
+            "mensagem": "Sua reserva foi cancelada"
+        })
+        
+        return jsonify({"status": "cancelada"})   
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao cancelar reserva: {str(e)}"}), 500
     
-    for itinerario in itinerarios:
-        if itinerario['Porto_Embarque'].lower() == porto_embarque.lower() and itinerario['Data_Embarque'] >= data_embarque:
-            resultados.append(itinerario)
+@app.route('/api/sse/<cliente_id>')
+def stream_sse(cliente_id):
+    """Endpoint SSE para cliente específico"""
+    def event_stream():
+        while True:
+            # Mantém conexão aberta
+            yield f"data: {json.dumps({'tipo': 'heartbeat', 'timestamp': datetime.now().isoformat()})}\n\n"
+            
+            # Verifica se há mensagens pendentes
+            if cliente_id in conexoes_sse:
+                mensagem = conexoes_sse[cliente_id]
+                yield f"data: {json.dumps(mensagem)}\n\n"
+                del conexoes_sse[cliente_id]
     
-    return resultados
-
-def listar_itinerarios(itinerarios):
-    if not itinerarios:
-        print("\nNenhum itinerário disponível para os critérios informados.")
-    else:
-        print("Itinerários Disponíveis:")
-        for i, itinerario in enumerate(itinerarios, 1):
-            print(f"\nItinerário {i}:")
-            print(f"  Destino: {itinerario['Destino']}")
-            print(f"  Nome do navio: {itinerario['Nome_Navio']}")
-            print(f"  Porto de embarque: {itinerario['Porto_Embarque']}")
-            print(f"  Porto de desemb: {itinerario['Porto_Desemb']}")
-            print(f"  Data de embarque: {itinerario['Data_Embarque'].strftime('%d/%m/%Y')}")
-            print(f"  Número de noites: {itinerario['Num_Noites']}")
-            print(f"  Lugares visitados {itinerario['Lugares_Visit']}")
-            print(f"  Valor do pacote: R${itinerario['Valor_Pacote']:.2f}")
+    return Response(event_stream(), mimetype="text/event-stream")    
 
 
     
-def publicar_reserva(itinerario, numero_passageiros, numero_cabines):
+def publicar_reserva(itinerario, numero_passageiros):
     mensagem = "criada com sucesso!"
     reserva_id = str(uuid.uuid4())
     valor_total = itinerario['Valor_Pacote'] * numero_passageiros
@@ -75,18 +116,43 @@ def publicar_reserva(itinerario, numero_passageiros, numero_cabines):
     print(f"\nSituação da reserva: {mensagem}")
     
     connection.close()
+def enviar_notificacao_sse(cliente_id, mensagem):
+    conexoes_sse[cliente_id] = mensagem
+
 def callback_pagamento(body):
     pacote = json.loads(body)
     mensagem = pacote['mensagem']
     print(f"\nSituação do pagamento: {mensagem}")
-
-        
+    if ('mensagem'== 'Pagamento aprovado'):
+        reserva_id = pacote.get('reserva_id')
+        print(f"\n[Reserva] Pagamento aprovado para reserva {reserva_id}: {pacote}")
+        enviar_notificacao_sse(reserva_id, {
+            "tipo": "pagamento_aprovado",
+            "reserva_id": reserva_id,
+            "mensagem": "Pagamento aprovado! Gerando bilhete..."
+        })
+    else:
+        reserva_id = pacote.get('reserva_id')
+        print(f"\n[Reserva] Pagamento recusado para reserva {reserva_id}: {pacote}")
+        enviar_notificacao_sse(reserva_id, {
+            "tipo": "pagamento_recusado",
+            "reserva_id": reserva_id,
+            "mensagem": "Pagamento recusado! Sua reserva foi cancelada."
+        })
+                
 def callback_bilhete(body):
     bilhete = json.loads(body)
+    reserva_id = bilhete.get('reserva_id')
     print(f"\n[Reserva] Tudo certo por aqui! Gerando reserva...: {bilhete}")    
-    print(f"\nID da Reserva: {bilhete.get('reserva_id')}")
+    print(f"\nID da Reserva: {reserva_id}")
     print(bilhete)
-
+    enviar_notificacao_sse(reserva_id, {
+                "tipo": "bilhete_gerado",
+                "reserva_id": reserva_id,
+                "bilhete": bilhete,
+                "mensagem": "Bilhete gerado com sucesso! Sua reserva está confirmada."
+            })
+    print(f"[Reserva] Bilhete gerado para reserva {reserva_id}: {bilhete}")
 def escutar_respostas():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
@@ -94,7 +160,6 @@ def escutar_respostas():
     channel.queue_declare(queue='pagamento-aprovado')
     channel.queue_declare(queue='pagamento-recusado')
     channel.queue_declare(queue='bilhete-gerado')
-
     channel.basic_consume(queue='pagamento-aprovado', on_message_callback=callback_pagamento, auto_ack=True)
     channel.basic_consume(queue='pagamento-recusado', on_message_callback=callback_pagamento, auto_ack=True)
     channel.basic_consume(queue='bilhete-gerado', on_message_callback=callback_bilhete, auto_ack=True)
