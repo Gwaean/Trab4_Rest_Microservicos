@@ -1,6 +1,6 @@
 from flask import Flask,jsonify
 from flask import render_template
-from flask import sse
+from flask_sse import sse
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 import uuid
@@ -8,9 +8,8 @@ import random
 from faker import Faker
 from flask_cors import CORS
 from Cruzeiro_Itinerarios import carregar_itinerarios
-
+from flask import request
 fake = Faker()
-
 app = Flask(__name__)
 app.config["REDIS_URL"] = "redis://localhost"
 app.register_blueprint(sse, url_prefix='/stream')
@@ -53,5 +52,27 @@ def get_destinations():
         {"id": idx + 1, "name": destino}
         for idx, destino in enumerate(destinos)
     ])
+    
+
+
+@app.route('/queue/interesse-promocoes', methods=['POST'])
+def add_to_promotion_queue():
+    data = request.json
+    
+    if not data or 'email' not in data:
+        return jsonify({'error': 'Email is required'}), 400
+        
+    try:
+        # Aqui você adicionaria o email à fila interesse-promocoes
+        mensagem = {
+            'email': data['email'],
+            'timestamp': data['timestamp']
+        }
+        # publish_to_queue('interesse-promocoes', message)
+        print(f"Added to queue: {mensagem}")  # Simula o envio para a fila
+        return jsonify({'mensagem': 'Successfully added to promotion queue'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 if __name__ == '__main__':
    app.run(debug=True,host='0.0.0.0',port=5000)
+   

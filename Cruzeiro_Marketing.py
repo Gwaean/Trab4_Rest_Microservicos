@@ -1,8 +1,13 @@
-import pika
 import csv
+import json
 import time
-import random
+import pika
+from flask import Flask, jsonify, request, Response
+from flask_cors import CORS
 
+app = Flask(__name__)
+CORS(app)
+interesses_promocoes = {}
 ARQUIVO_CSV = 'itinerarios.csv'
 ARQUIVO_HISTORICO = 'historico_precos.csv'
 ARQUIVO_MARKETING = 'marketing_queue.csv'
@@ -36,13 +41,33 @@ def salvar_precos_csv(precos):
                 variacao
             ])
 
-def subscribe_marketing(nome):
-    with open(ARQUIVO_MARKETING, 'a', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        if f.tell() == 0:
-            writer.writerow(['Nome'])
-        writer.writerow([nome])
-    print(f"Inscrição realizada para {nome}.")
+@app.route('/api/promocoes/interesse', methods=['POST'])
+def registrar_interesse_promocoes():
+    """Registra interesse em promoções"""
+    try:
+        dados = request.json
+        cliente_id = dados.get('cliente_id')
+        
+        if not cliente_id:
+            return jsonify({"erro": "cliente_id obrigatório"}), 400
+        
+        interesses_promocoes[cliente_id] = True
+        
+        return jsonify({"status": "interesse_registrado"})
+        
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao registrar interesse: {str(e)}"}), 500
+@app.route('/api/promocoes/interesse/<cliente_id>', methods=['DELETE'])
+def cancelar_interesse_promocoes(cliente_id):
+    """Cancela interesse em promoções"""
+    try:
+        if cliente_id in interesses_promocoes:
+            del interesses_promocoes[cliente_id]
+        
+        return jsonify({"status": "interesse_cancelado"})
+        
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao cancelar interesse: {str(e)}"}), 500
 
 
 def enviar_notificacao(destino, preco_antigo, preco_novo):
@@ -84,9 +109,9 @@ def simular_mudanca_preco():
             salvar_precos_csv({destino: preco_novo})  # Salva apenas o destino alterado
 
         time.sleep(random.randint(5, 10))
+    '''
 if __name__ == "__main__":
-    simular_mudanca_preco()
-'''
+      app.run(debug=True, host='0.0.0.0', port=5000)
 
 
 

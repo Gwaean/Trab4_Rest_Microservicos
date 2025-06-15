@@ -124,7 +124,6 @@ def escutar():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
     channel.queue_declare(queue="reserva-criada")
-
     channel.basic_consume(queue="reserva-criada", on_message_callback=processar, auto_ack=True)
     print("[Pagamento] Aguardando reservas...")
     channel.start_consuming()

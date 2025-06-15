@@ -1,4 +1,3 @@
-
 import json
 import uuid
 from datetime import datetime
@@ -7,7 +6,6 @@ import threading
 import requests
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
-
 app = Flask(__name__)
 CORS(app)
 reservas = {}
@@ -34,8 +32,7 @@ def criar_reserva():
             "data_criacao": datetime.now().isoformat()
         }
     reservas[reserva_id] = reserva
-    publicar_reserva("reserva-criada", reserva)
-        
+    publicar_reserva("reserva-criada", reserva)   
         # Solicita link de pagamento
     try:
             pagamento_response = requests.post(f"{MS_PAGAMENTO_URL}/api/pagamento", json={
@@ -73,8 +70,7 @@ def cancelar_reserva(reserva_id):
         
         return jsonify({"status": "cancelada"})   
     except Exception as e:
-        return jsonify({"erro": f"Erro ao cancelar reserva: {str(e)}"}), 500
-    
+        return jsonify({"erro": f"Erro ao cancelar reserva: {str(e)}"}), 500   
 @app.route('/api/sse/<cliente_id>')
 def stream_sse(cliente_id):
     """Endpoint SSE para cliente específico"""
@@ -89,10 +85,7 @@ def stream_sse(cliente_id):
                 yield f"data: {json.dumps(mensagem)}\n\n"
                 del conexoes_sse[cliente_id]
     
-    return Response(event_stream(), mimetype="text/event-stream")    
-
-
-    
+    return Response(event_stream(), mimetype="text/event-stream")        
 def publicar_reserva(itinerario, numero_passageiros):
     mensagem = "criada com sucesso!"
     reserva_id = str(uuid.uuid4())
@@ -114,11 +107,9 @@ def publicar_reserva(itinerario, numero_passageiros):
     )
 
     print(f"\nSituação da reserva: {mensagem}")
-    
     connection.close()
 def enviar_notificacao_sse(cliente_id, mensagem):
     conexoes_sse[cliente_id] = mensagem
-
 def callback_pagamento(body):
     pacote = json.loads(body)
     mensagem = pacote['mensagem']
@@ -138,8 +129,7 @@ def callback_pagamento(body):
             "tipo": "pagamento_recusado",
             "reserva_id": reserva_id,
             "mensagem": "Pagamento recusado! Sua reserva foi cancelada."
-        })
-                
+        })           
 def callback_bilhete(body):
     bilhete = json.loads(body)
     reserva_id = bilhete.get('reserva_id')
@@ -156,7 +146,6 @@ def callback_bilhete(body):
 def escutar_respostas():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
-
     channel.queue_declare(queue='pagamento-aprovado')
     channel.queue_declare(queue='pagamento-recusado')
     channel.queue_declare(queue='bilhete-gerado')
