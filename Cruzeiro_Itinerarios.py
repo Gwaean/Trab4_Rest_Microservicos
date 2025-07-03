@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request
 from datetime import datetime
 import threading
 app = Flask(__name__)
-
+itinerarios_cabines_disponiveis = {}
 def carregar_itinerarios():
     itinerarios = []
     try:
@@ -22,10 +22,11 @@ def carregar_itinerarios():
                     'lugares_visitados': row['Lugares_Visit'],
                     'num_noites': int(row['Num_Noites']),
                     'valor_pacote': float(row['Valor_Pacote']),
-                    'cabines_disponiveis': int(row.get('Cabines_Disponiveis', 10))
+                    'num_cabines': int(row.get('num_cabines', 10))
                 }
                 itinerarios.append(itinerario)
-                itinerario.cabines_disponiveis[itinerario['id']] = itinerario['cabines_disponiveis']
+                if itinerario['id'] not in itinerarios_cabines_disponiveis:
+                    itinerarios_cabines_disponiveis[itinerario['id']] = itinerario['num_cabines']
     except FileNotFoundError:
         print("Arquivo itinerarios.csv não encontrado")
     return itinerarios
@@ -54,34 +55,37 @@ def consultar_itinerarios():
             except ValueError:
                 pass
         # Adiciona cabines disponíveis atualizadas
-        itinerario['cabines_disponiveis'] = itinerarios.cabines_disponiveis.get(itinerario['id'], 0)
-        if itinerario['cabines_disponiveis'] > 0:
-            resultados.append(itinerario)
+        itinerario_copy = itinerario.copy()
+        itinerario_copy['cabines_disponiveis'] = itinerarios_cabines_disponiveis.get(itinerario['id'], 0)
+        if itinerario_copy['cabines_disponiveis'] > 0:
+            resultados.append(itinerario_copy)
     return jsonify(resultados)
+
 def processar_reserva(ch, method, properties, body, cabines_disponiveis):
     try:
         dados = json.loads(body)
         itinerario_id = dados.get('itinerario_id')
-        cabines_reservadas = dados.get('cabines', 1)
+        cabines_reservadas = dados.get('num_cabines', 1)
         
-        if itinerario_id in cabines_disponiveis:
-            cabines_disponiveis[itinerario_id] = max(0, 
-                cabines_disponiveis[itinerario_id] - cabines_reservadas)
+        if itinerario_id in itinerarios_cabines_disponiveis:
+            itinerarios_cabines_disponiveis[itinerario_id] = max(0, 
+                itinerarios_cabines_disponiveis[itinerario_id] - cabines_reservadas)
             print(f"[Itinerários] Cabines reduzidas para itinerário {itinerario_id}. "
-                  f"Disponíveis: {cabines_disponiveis[itinerario_id]}")
+                  f"Disponíveis: {itinerarios_cabines_disponiveis[itinerario_id]}")
     except Exception as e:
         print(f"Erro ao processar reserva criada: {e}")
+        
 def processar_reserva_cancelada(ch, method, properties, body, cabines_disponiveis):
     
     try:
         dados = json.loads(body)
         itinerario_id = dados.get('itinerario_id')
-        cabines_liberadas = dados.get('cabines', 1)
+        cabines_liberadas = dados.get('num_cabines', 1)
         
-        if itinerario_id in cabines_disponiveis:
-            cabines_disponiveis[itinerario_id] += cabines_liberadas
+        if itinerario_id in itinerarios_cabines_disponiveis:
+            itinerarios_cabines_disponiveis[itinerario_id] += cabines_liberadas
             print(f"[Itinerários] Cabines liberadas para itinerário {itinerario_id}. "
-                  f"Disponíveis: {cabines_disponiveis[itinerario_id]}")
+                  f"Disponíveis: {itinerarios_cabines_disponiveis[itinerario_id]}")
     except Exception as e:
         print(f"Erro ao processar reserva cancelada: {e}")
 def escutar():

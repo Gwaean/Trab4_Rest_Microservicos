@@ -21,18 +21,23 @@ def enviar_bilhete(bilhete):
     print(f"[Bilhete] Pagamento Processando...: {bilhete}")
     connection.close()
 
-def callback(body):
+def callback(body, ch, method, properties):
     pacote = json.loads(body)
-    mensagem = pacote["mensagem"]
-    print(f"[Bilhete] Recebido: {mensagem}")
-
-   
+    reserva_id = pacote.get("reserva_id")
+    status = pacote.get("status")
+    
+    if status == 'aprovado':
+        print(f"[Bilhete] Recebido pagamento aprovado para reserva: {reserva_id}")
+        bilhete = gerar_bilhete(reserva_id)
+        enviar_bilhete(bilhete)
+    else:
+        print(f"[Bilhete] Recebido pagamento com status: {status} para reserva: {reserva_id}. Nenhuma ação tomada.")
 
 def escutar_pagamentos_aprovados():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
     channel.queue_declare(queue="pagamento-aprovado")
-    print("escutando pagamento...")
+    print("Escutando pagamento...")
 
     channel.basic_consume(queue="pagamento-aprovado", on_message_callback=callback, auto_ack=True)
     channel.start_consuming()

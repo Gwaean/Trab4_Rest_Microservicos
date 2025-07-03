@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="author" content="Untree.co">
+	<link rel="shortcut icon" href="favicon.png">
+
+	<meta name="description" content="" />
+	<meta name="keywords" content="bootstrap, bootstrap4" />
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Source+Serif+Pro:wght@400;700&display=swap" rel="stylesheet">
+
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<link rel="stylesheet" href="css/owl.carousel.min.css">
+	<link rel="stylesheet" href="css/owl.theme.default.min.css">
+	<link rel="stylesheet" href="css/jquery.fancybox.min.css">
+	<link rel="stylesheet" href="fonts/icomoon/style.css">
+	<link rel="stylesheet" href="fonts/flaticon/font/flaticon.css">
+	<link rel="stylesheet" href="css/daterangepicker.css">
+	<link rel="stylesheet" href="css/aos.css">
+	<link rel="stylesheet" href="css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+	<title>Reservar Cruzeiro - MS Distributed Cruises</title>
+</head>
+
+<body>
+	<div class="site-mobile-menu site-navbar-target">
+		<div class="site-mobile-menu-header">
+			<div class="site-mobile-menu-close">
+				<span class="icofont-close js-menu-toggle"></span>
+			</div>
+		</div>
+		<div class="site-mobile-menu-body"></div>
+	</div>
+
+	<nav class="site-nav">
+		<div class="container">
+			<div class="site-navigation">
+				<a href="index.html" class="logo m-0">Tour <span class="text-primary">.</span></a>
+
+				<ul class="js-clone-nav d-none d-lg-inline-block text-left site-menu float-right">
+					<li><a href="index.html">Home</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+
+				<a href="#" class="burger ml-auto float-right site-menu-toggle js-menu-toggle d-inline-block d-lg-none light" data-toggle="collapse" data-target="#main-navbar">
+					<span></span>
+				</a>
+
+			</div>
+		</div>
+	</nav>
+
+    <div class="hero hero-inner">
+        <div class="container">
+          <div class="row align-items-center">
+            <div class="col-lg-6 mx-auto text-center">
+              <div class="intro-wrap">
+                <h1 class="mb-0">Faça sua Reserva</h1>
+                <p class="text-white">Confirme os detalhes do seu cruzeiro e finalize a reserva.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="untree_co-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <form id="reservationForm" class="form">
+                        <h2 class="mb-4">Detalhes do Itinerário Escolhido</h2>
+                        <div id="itineraryDetails" class="mb-4">
+                            <p><strong>Destino:</strong> <span id="detail-destino"></span></p>
+                            <p><strong>Navio:</strong> <span id="detail-navio"></span></p>
+                            <p><strong>Data de Embarque:</strong> <span id="detail-data-embarque"></span></p>
+                            <p><strong>Porto de Embarque:</strong> <span id="detail-porto-embarque"></span></p>
+                            <p><strong>Lugares Visitados:</strong> <span id="detail-lugares-visitados"></span></p>
+                            <p><strong>Número de Noites:</strong> <span id="detail-num-noites"></span></p>
+                            <p><strong>Cabines Disponíveis:</strong> <span id="detail-cabines-disponiveis"></span></p>
+                            <p><strong>Valor por Pessoa:</strong> R$ <span id="detail-valor-pacote"></span></p>
+                            <p><strong>Valor Total (Estimado):</strong> R$ <span id="detail-valor-total-estimado"></span></p>
+                        </div>
+
+                        <h2 class="mb-4">Informações da Reserva</h2>
+                        <div class="row mb-3">
+                            <div class="col-md-6 form-group">
+                                <label for="numPassageiros">Número de Passageiros</label>
+                                <input type="number" class="form-control" id="numPassageiros" min="1" value="1" required>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label for="numCabinesReservar">Número de Cabines</label>
+                                <input type="number" class="form-control" id="numCabinesReservar" min="1" value="1" required>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="itinerarioId">
+                        <input type="hidden" id="valorUnitario">
+                        <input type="hidden" id="cabinesDisp">
+
+                        <button type="submit" class="btn btn-primary btn-block">Confirmar Reserva</button>
+
+                        <div id="reservationStatus" class="mt-4" style="display: none;">
+                            <h3 class="mb-3">Status da sua Reserva:</h3>
+                            <p id="statusMessage"></p>
+                            <p id="paymentLink" style="display: none;"><a href="#" target="_blank" class="btn btn-success">Link para Pagamento</a></p>
+                        </div>
+                        <div id="sseNotifications" class="mt-4 alert alert-info" style="display: none;">
+                            <strong>Notificações em Tempo Real:</strong>
+                            <div id="sseMessages"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+	<div class="py-5 cta-section">
+		<div class="container">
+			<div class="row text-center">
+				<div class="col-md-12">
+					<h2 class="mb-2 text-white">Lets you Explore the Best. Contact Us Now</h2>
+					<p class="mb-4 lead text-white text-white-opacity">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Excepturi, fugit?</p>
+					<p class="mb-0"><a href="booking.html" class="btn btn-outline-white text-white btn-md font-weight-bold">Get in touch</a></p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="site-footer">
+		<div class="inner first">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-6 col-lg-4">
+						<div class="widget">
+							<h3 class="heading">About Tour</h3>
+							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
+						</div>
+						<div class="widget">
+							<ul class="list-unstyled social">
+								<li><a href="#"><span class="icon-twitter"></span></a></li>
+								<li><a href="#"><span class="icon-instagram"></span></a></li>
+								<li><a href="#"><span class="icon-facebook"></span></a></li>
+								<li><a href="#"><span class="icon-linkedin"></span></a></li>
+								<li><a href="#"><span class="icon-dribbble"></span></a></li>
+								<li><a href="#"><span class="icon-pinterest"></span></a></li>
+								<li><a href="#"><span class="icon-apple"></span></a></li>
+								<li><a href="#"><span class="icon-google"></span></a></li>
+							</ul>
+						</div>
+					</div>
+					<div class="col-md-6 col-lg-2 pl-lg-5">
+						<div class="widget">
+							<h3 class="heading">Pages</h3>
+							<ul class="links list-unstyled">
+								<li><a href="#">Blog</a></li>
+								<li><a href="#">About</a></li>
+								<li><a href="#">Contact</a></li>
+							</ul>
+						</div>
+					</div>
+					<div class="col-md-6 col-lg-2">
+						<div class="widget">
+							<h3 class="heading">Resources</h3>
+							<ul class="links list-unstyled">
+								<li><a href="#">Blog</a></li>
+								<li><a href="#">About</a></li>
+								<li><a href="#">Contact</a></li>
+							</ul>
+						</div>
+					</div>
+					<div class="col-md-6 col-lg-4">
+						<div class="widget">
+							<h3 class="heading">Contact</h3>
+							<ul class="list-unstyled quick-info links">
+								<li class="email"><a href="#">mail@example.com</a></li>
+								<li class="phone"><a href="#">+1 222 212 3819</a></li>
+								<li class="address"><a href="#">43 Raymouth Rd. Baltemoer, London 3910</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+
+		<div class="inner dark">
+			<div class="container">
+				<div class="row text-center">
+					<div class="col-md-8 mb-3 mb-md-0 mx-auto">
+						<p>Copyright ©<script>document.write(new Date().getFullYear());</script>. All Rights Reserved. — Designed with love by <a href="https://untree.co" class="link-highlight">Untree.co</a> </p>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="overlayer"></div>
+	<div class="loader">
+		<div class="spinner-border" role="status">
+			<span class="sr-only">Loading...</span>
+		</div>
+	</div>
+
+	<script src="js/popper.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/owl.carousel.min.js"></script>
+	<script src="js/jquery.animateNumber.min.js"></script>
+	<script src="js/jquery.waypoints.min.js"></script>
+	<script src="js/jquery.fancybox.min.js"></script>
+	<script src="js/aos.js"></script>
+	<script src="js/moment.min.js"></script>
+	<script src="js/daterangepicker.js"></script>
+    <script src="js/custom.js"></script>
+    
+    <script>
+        // Função para obter parâmetros da URL
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+            var results = regex.exec(location.search);
+            return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+
+        $(document).ready(function() {
+            const itinerarioId = getUrlParameter('id');
+            const numCabinesDisp = parseInt(getUrlParameter('cabines'));
+            const valorUnitario = parseFloat(getUrlParameter('valor'));
+            const dataEmbarque = getUrlParameter('data');
+            const destino = getUrlParameter('destino'); // Assumindo que você passa o destino também
+            const nomeNavio = getUrlParameter('navio'); // Assumindo que você passa o nome do navio
+
+            if (itinerarioId) {
+                // Preencher campos ocultos
+                $('#itinerarioId').val(itinerarioId);
+                $('#valorUnitario').val(valorUnitario);
+                $('#cabinesDisp').val(numCabinesDisp);
+
+                // Preencher detalhes do itinerário
+                $('#detail-destino').text(destino || 'Não informado');
+                $('#detail-navio').text(nomeNavio || 'Não informado');
+                $('#detail-data-embarque').text(dataEmbarque || 'Não informado');
+                // As informações abaixo não vêm da URL, você pode buscá-las ou removê-las
+                $('#detail-porto-embarque').text('Carregando...'); 
+                $('#detail-lugares-visitados').text('Carregando...');
+                $('#detail-num-noites').text('Carregando...');
+                $('#detail-cabines-disponiveis').text(numCabinesDisp);
+                $('#detail-valor-pacote').text(valorUnitario.toFixed(2));
+                
+                // Calcular e exibir valor total estimado
+                $('#numPassageiros').on('input', function() {
+                    let passageiros = parseInt($(this).val());
+                    if (isNaN(passageiros) || passageiros < 1) passageiros = 1;
+                    $('#detail-valor-total-estimado').text((passageiros * valorUnitario).toFixed(2));
+                }).trigger('input'); // Disparar no carregamento para valor inicial
+
+                // Ajustar limite de cabines
+                $('#numCabinesReservar').attr('max', numCabinesDisp);
+
+                // Opcional: Buscar detalhes completos do itinerário via API
+                // Se você não passar todos os detalhes na URL, pode fazer uma chamada aqui:
+                /*
+                fetch(`/api/itinerarios?id=${itinerarioId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const itinerario = data[0]; // Ou encontre o item pelo ID
+                        $('#detail-porto-embarque').text(itinerario.porto_embarque);
+                        $('#detail-lugares-visitados').text(itinerario.lugares_visitados);
+                        $('#detail-num-noites').text(itinerario.num_noites);
+                    })
+                    .catch(error => console.error('Erro ao carregar detalhes do itinerário:', error));
+                */
+            } else {
+                alert("Nenhum itinerário selecionado. Redirecionando para a página inicial.");
+                window.location.href = 'index.html';
+            }
+
+            // Lidar com a submissão do formulário de reserva
+            $('#reservationForm').submit(function(e) {
+                e.preventDefault();
+
+                const itinerario_id = $('#itinerarioId').val();
+                const num_passageiros = parseInt($('#numPassageiros').val());
+                const num_cabines = parseInt($('#numCabinesReservar').val());
+                const valor_total_estimado = parseFloat($('#detail-valor-total-estimado').text());
+
+                if (num_cabines > numCabinesDisp) {
+                    alert('Número de cabines solicitado excede a disponibilidade.');
+                    return;
+                }
+                if (num_passageiros < 1 || num_cabines < 1) {
+                    alert('Número de passageiros e cabines deve ser pelo menos 1.');
+                    return;
+                }
+
+                const reservationData = {
+                    itinerario_id: itinerario_id,
+                    data_embarque: dataEmbarque, // Passar a data de embarque da URL
+                    num_passageiros: num_passageiros,
+                    num_cabines: num_cabines,
+                    valor_total: valor_total_estimado // Usar o valor total estimado
+                };
+
+                $.ajax({
+                    url: 'http://localhost:5000/api/reservas', // MS Reserva
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(reservationData),
+                    success: function(response) {
+                        $('#reservationStatus').show();
+                        if (response.status === 'criada' && response.link_pagamento) {
+                            $('#statusMessage').text('Reserva criada com sucesso! Por favor, prossiga para o pagamento.');
+                            $('#paymentLink a').attr('href', response.link_pagamento);
+                            $('#paymentLink').show();
+                            // Iniciar escuta SSE após reserva criada
+                            setupSSE(response.reserva_id);
+                        } else {
+                            $('#statusMessage').text('Reserva criada, mas sem link de pagamento. Status: ' + response.status);
+                            setupSSE(response.reserva_id); // Iniciar SSE mesmo sem link se houver reserva_id
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('#reservationStatus').show();
+                        $('#statusMessage').text('Erro ao criar reserva: ' + (xhr.responseJSON ? xhr.responseJSON.erro : error));
+                    }
+                });
+            });
+
+            // Configuração SSE
+            let sseEventSource = null;
+            function setupSSE(reservaId) {
+                if (sseEventSource) {
+                    sseEventSource.close();
+                }
+                const clientId = reservaId; // Usar o ID da reserva como ID do cliente para notificações personalizadas
+                sseEventSource = new EventSource(`http://localhost:5000/api/sse/${clientId}`);
+                $('#sseNotifications').show();
+
+                sseEventSource.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    const sseMessagesDiv = $('#sseMessages');
+                    
+                    // Prepend para mostrar as mais recentes primeiro
+                    sseMessagesDiv.prepend(`<p><strong>${new Date().toLocaleTimeString()}:</strong> ${data.mensagem || JSON.stringify(data)}</p>`);
+
+                    if (data.tipo === 'pagamento_aprovado') {
+                        $('#statusMessage').text('Pagamento aprovado! Seu bilhete está sendo gerado.');
+                        $('#paymentLink').hide(); // Pagamento já foi, esconder link
+                    } else if (data.tipo === 'pagamento_recusado') {
+                        $('#statusMessage').text('Pagamento recusado. Sua reserva foi cancelada.');
+                        $('#paymentLink').hide();
+                    } else if (data.tipo === 'bilhete_gerado') {
+                        $('#statusMessage').text('Bilhete gerado com sucesso! Sua reserva está confirmada.');
+                        sseMessagesDiv.prepend(`<p><strong>Bilhete Gerado:</strong> <pre>${JSON.stringify(data.bilhete, null, 2)}</pre></p>`);
+                    }
+                };
+
+                sseEventSource.onerror = function(error) {
+                    console.error("SSE Error:", error);
+                    sseEventSource.close(); // Tentar fechar e talvez reconectar
+                };
+            }
+        });
+    </script>
+</body>
+</html>

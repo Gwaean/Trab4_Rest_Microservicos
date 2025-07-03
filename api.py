@@ -11,10 +11,9 @@ from Cruzeiro_Itinerarios import carregar_itinerarios
 from flask import request
 fake = Faker()
 app = Flask(__name__)
-app.config["REDIS_URL"] = "redis://localhost"
-app.register_blueprint(sse, url_prefix='/stream')
+#app.config["REDIS_URL"] = "redis://localhost"
+#app.register_blueprint(sse, url_prefix='/stream')
 
-sse.publish({"message": datetime.datetime.now()}, type='publish')
 def get_data():
     data = list()
     for _ in range(10):
@@ -22,19 +21,6 @@ def get_data():
     return data
 
 
-def get_schd_time():
-    return random.randrange(5,20)
-
-def server_side_event():
-    """ Function to publish server side event """
-    with app.app_context():
-        sse.publish(get_data(), type='dataUpdate')
-        print("Event Scheduled at ",datetime.datetime.now())
-
-
-sched = BackgroundScheduler(daemon=True)
-sched.add_job(server_side_event,'interval',seconds=get_schd_time())
-sched.start()
 
 
 @app.route('/')
@@ -74,5 +60,8 @@ def add_to_promotion_queue():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 if __name__ == '__main__':
-   app.run(debug=True,host='0.0.0.0',port=5000)
+   with app.app_context():
+      # sse.publish({"message": datetime.datetime.now()}, type='publish')
+    app.run(debug=True,host='0.0.0.0',port=5000)
+
    

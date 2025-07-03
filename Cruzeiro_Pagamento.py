@@ -108,17 +108,11 @@ def enviar_pagamento(fila, reserva_id):
       connection.close()
 
 def processar(ch, method, props, body):
-    dados = json.loads(body)
-    reserva_id = dados.get("reserva_id")
-    valor = dados.get("valor", 0)
-
-    print(f"/**Processando pagamento da reserva ID = {reserva_id} no valor de R${valor}")
-    aprovado = simular_processamento_pagamento()
-   
-    if aprovado:
-            enviar_pagamento("pagamento-aprovado", reserva_id)
-    else:
-            enviar_pagamento("pagamento-recusado", reserva_id)
+   dados = json.loads(body)
+   reserva_id = dados.get("reserva_id")
+   valor = dados.get("valor_total", 0)  # Valor total da reserva
+   print(f"/**Processando pagamento da reserva ID = {reserva_id} no valor de R${valor}")
+   simular_processamento_pagamento(reserva_id, valor)
 
 def escutar():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -129,4 +123,5 @@ def escutar():
     channel.start_consuming()
 
 if __name__ == "__main__":
-    escutar()
+    threading.Thread(target=escutar, daemon=True).start()
+    app.run(debug=True, host='0.0.0.0', port=5002)

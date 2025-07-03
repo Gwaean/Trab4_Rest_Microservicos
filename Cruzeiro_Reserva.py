@@ -32,7 +32,8 @@ def criar_reserva():
             "data_criacao": datetime.now().isoformat()
         }
     reservas[reserva_id] = reserva
-    publicar_reserva("reserva-criada", reserva)   
+    publicar_reserva("reserva-criada", reserva) 
+      
         # Solicita link de pagamento
     try:
             pagamento_response = requests.post(f"{MS_PAGAMENTO_URL}/api/pagamento", json={
@@ -71,6 +72,7 @@ def cancelar_reserva(reserva_id):
         return jsonify({"status": "cancelada"})   
     except Exception as e:
         return jsonify({"erro": f"Erro ao cancelar reserva: {str(e)}"}), 500   
+    
 @app.route('/api/sse/<cliente_id>')
 def stream_sse(cliente_id):
     """Endpoint SSE para cliente específico"""
@@ -85,37 +87,29 @@ def stream_sse(cliente_id):
                 yield f"data: {json.dumps(mensagem)}\n\n"
                 del conexoes_sse[cliente_id]
     
-    return Response(event_stream(), mimetype="text/event-stream")        
-def publicar_reserva(itinerario, numero_passageiros):
-    mensagem = "criada com sucesso!"
-    reserva_id = str(uuid.uuid4())
-    valor_total = itinerario['Valor_Pacote'] * numero_passageiros
-
-    dados_reserva = {
-        "reserva_id": reserva_id,
-        "valor": valor_total
-    }
-
+    return Response(event_stream(), mimetype="text/event-stream")
+        
+def publicar_reserva(queue_name, message_body):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
-    channel.queue_declare(queue='reserva-criada')
+    channel.queue_declare(queue=queue_name)
 
     channel.basic_publish(
         exchange='',
-        routing_key='reserva-criada',
-        body=json.dumps(dados_reserva)
+        routing_key=queue_name,
+        body=json.dumps(message_body)
     )
-
-    print(f"\nSituação da reserva: {mensagem}")
+    print(f"\n[Reserva] Mensagem publicada para {queue_name}: {message_body}")
     connection.close()
+    
 def enviar_notificacao_sse(cliente_id, mensagem):
     conexoes_sse[cliente_id] = mensagem
 def callback_pagamento(body):
     pacote = json.loads(body)
-    mensagem = pacote['mensagem']
-    print(f"\nSituação do pagamento: {mensagem}")
-    if ('mensagem'== 'Pagamento aprovado'):
-        reserva_id = pacote.get('reserva_id')
+    status = pacote.get('status') 
+    reserva_id = pacote.get('reserva_id')
+    print(f"\n[Reserva] Recebido pacote de pagamento: {pacote}")
+    if status == 'aprovado':
         print(f"\n[Reserva] Pagamento aprovado para reserva {reserva_id}: {pacote}")
         enviar_notificacao_sse(reserva_id, {
             "tipo": "pagamento_aprovado",
@@ -123,7 +117,6 @@ def callback_pagamento(body):
             "mensagem": "Pagamento aprovado! Gerando bilhete..."
         })
     else:
-        reserva_id = pacote.get('reserva_id')
         print(f"\n[Reserva] Pagamento recusado para reserva {reserva_id}: {pacote}")
         enviar_notificacao_sse(reserva_id, {
             "tipo": "pagamento_recusado",
@@ -152,8 +145,9 @@ def escutar_respostas():
     channel.basic_consume(queue='pagamento-aprovado', on_message_callback=callback_pagamento, auto_ack=True)
     channel.basic_consume(queue='pagamento-recusado', on_message_callback=callback_pagamento, auto_ack=True)
     channel.basic_consume(queue='bilhete-gerado', on_message_callback=callback_bilhete, auto_ack=True)
-    print("aguardando reservas...")
+    print("Aguardando reservas...")
     channel.start_consuming()
     
 if __name__ == "__main__":
-    escutar_respostas()
+       threading.Thread(target=escutar_respostas, daemon=True).start()
+       app.run(debug=True,host='0.0.0.0',port=5000)
